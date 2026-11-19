@@ -93,4 +93,44 @@ class AuthWebhookTest extends TestCase
         // Assert we get a proper response
         $this->assertTrue($result[0]);
     }
+
+    public function testRunsWithOldSecretDuringRotation(): void
+    {
+        $this->rotateSecret('old');
+
+        $result = $this->runMiddleware(AuthWebhookMiddleware::class, $this->signedWebhookRequest());
+
+        $this->assertTrue($result[0]);
+    }
+
+    public function testDeniesOldSecretWhenNotConfigured(): void
+    {
+        $this->rotateSecret('');
+
+        $result = $this->runMiddleware(AuthWebhookMiddleware::class, $this->signedWebhookRequest());
+
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $result[1]->status());
+    }
+
+    protected function rotateSecret(string $keepOld): void
+    {
+        $current = $this->app['config']->get('shopify-app.api_secret');
+        $this->app['config']->set('shopify-app.api_secret', 'rotated-secret');
+        $this->app['config']->set('shopify-app.api_secret_old', $keepOld === 'old' ? $current : '');
+    }
+
+    protected function signedWebhookRequest(): \Illuminate\Http\Request
+    {
+        return Request::instance()->duplicate(
+            [],
+            null,
+            null,
+            null,
+            null,
+            array_merge(Request::server(), [
+                'HTTP_X_Shopify_Hmac_Sha256' => 'vhwRQys0GZozEzsl9+bjquUnCkjSE7r1YPgl9S0CY1E=',
+                'HTTP_X_Shopify_Shop_Domain' => 'example.myshopify.com',
+            ])
+        );
+    }
 }

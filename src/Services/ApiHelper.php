@@ -167,7 +167,15 @@ class ApiHelper implements IApiHelper
                 .'='.str_replace(['%', '&'], ['%25', '%26'], (string) $value);
         }
 
-        return hash_equals(hash_hmac('sha256', implode('&', $pairs), $secret), $request['hmac']);
+        $message = implode('&', $pairs);
+        $secrets = array_unique(array_merge([$secret], Util::getShopifyApiSecrets($request['shop'])));
+        foreach ($secrets as $candidate) {
+            if (hash_equals(hash_hmac('sha256', $message, $candidate), $request['hmac'])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

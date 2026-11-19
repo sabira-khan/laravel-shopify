@@ -163,6 +163,27 @@ class Util
      *
      * @return mixed
      */
+    public static function getShopifyApiSecrets($shop = null): array
+    {
+        $secrets = array_filter(
+            [self::getShopifyConfig('api_secret', $shop), self::getShopifyConfig('api_secret_old', $shop)],
+            fn ($secret) => is_string($secret) && $secret !== ''
+        );
+
+        return array_values(array_unique($secrets));
+    }
+
+    public static function verifyHmacWithSecrets(Hmac $expected, array $opts, $shop = null): bool
+    {
+        foreach (self::getShopifyApiSecrets($shop) as $secret) {
+            if ($expected->isSame(self::createHmac($opts, $secret))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static function getShopifyConfig(string $key, $shop = null)
     {
         $config = Config::get('shopify-app', []);

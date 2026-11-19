@@ -184,6 +184,8 @@ return [
 
     'api_secret' => env('SHOPIFY_API_SECRET', ''),
 
+    'api_secret_old' => env('SHOPIFY_API_SECRET_OLD', ''),
+
     /*
     |--------------------------------------------------------------------------
     | Shopify API Scopes

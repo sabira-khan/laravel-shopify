@@ -158,4 +158,22 @@ class SessionTokenTest extends TestCase
         $token = $this->buildToken(['exp' => Carbon::now()->subDay()]);
         SessionToken::fromNative($token);
     }
+
+    public function testShouldProcessTokenSignedWithOldSecretDuringRotation(): void
+    {
+        $token = $this->buildToken();
+        $this->app['config']->set('shopify-app.api_secret_old', $this->app['config']->get('shopify-app.api_secret'));
+        $this->app['config']->set('shopify-app.api_secret', 'rotated-secret');
+
+        $this->assertSame($this->tokenDefaults['sid'], SessionToken::fromNative($token)->getSessionId()->toNative());
+    }
+
+    public function testShouldThrowExceptionForOldSecretWhenNotConfigured(): void
+    {
+        $token = $this->buildToken();
+        $this->app['config']->set('shopify-app.api_secret', 'rotated-secret');
+
+        $this->expectException(AssertionFailedException::class);
+        SessionToken::fromNative($token);
+    }
 }

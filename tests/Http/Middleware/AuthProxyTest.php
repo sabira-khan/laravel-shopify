@@ -102,4 +102,27 @@ class AuthProxyTest extends TestCase
 
         $this->assertTrue($result[0]);
     }
+
+    public function testRunsWithOldSecretDuringRotation(): void
+    {
+        $this->app['config']->set('shopify-app.api_secret', 'rotated-secret');
+        $this->app['config']->set('shopify-app.api_secret_old', 'hush');
+        Request::merge($this->queryParams);
+        Request::instance()->server->set('QUERY_STRING', $this->queryString);
+
+        $result = $this->runMiddleware(AuthProxyMiddleware::class);
+
+        $this->assertTrue($result[0]);
+    }
+
+    public function testDeniesOldSecretWhenNotConfigured(): void
+    {
+        $this->app['config']->set('shopify-app.api_secret', 'rotated-secret');
+        Request::merge($this->queryParams);
+        Request::instance()->server->set('QUERY_STRING', $this->queryString);
+
+        $result = $this->runMiddleware(AuthProxyMiddleware::class);
+
+        $this->assertFalse($result[0]);
+    }
 }

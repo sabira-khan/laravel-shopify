@@ -157,4 +157,29 @@ class UtilTest extends TestCase
             'port mismatch' => ['http://localhost:8080/foo', 'http://localhost', '/'],
         ];
     }
+
+    public function testGetShopifyApiSecrets(): void
+    {
+        $this->app['config']->set('shopify-app.api_secret', 'new-secret');
+        $this->app['config']->set('shopify-app.api_secret_old', 'old-secret');
+        $this->assertSame(['new-secret', 'old-secret'], Util::getShopifyApiSecrets());
+
+        $this->app['config']->set('shopify-app.api_secret_old', 'new-secret');
+        $this->assertSame(['new-secret'], Util::getShopifyApiSecrets());
+
+        $this->app['config']->set('shopify-app.api_secret_old', '');
+        $this->assertSame(['new-secret'], Util::getShopifyApiSecrets());
+    }
+
+    public function testGetShopifyApiSecretsUsesConfigApiCallback(): void
+    {
+        $this->app['config']->set('shopify-app.config_api_callback', function (string $key, $shop) {
+            return [
+                'api_secret' => "new-{$shop}",
+                'api_secret_old' => "old-{$shop}",
+            ][$key] ?? null;
+        });
+
+        $this->assertSame(['new-shop', 'old-shop'], Util::getShopifyApiSecrets('shop'));
+    }
 }

@@ -47,14 +47,14 @@ class StoreUsageCharge extends FormRequest
             unset($data['signature']);
 
             // Confirm the charge hasn't been tampered with
-            $signatureLocal = Util::createHmac(
+            $valid = Util::verifyHmacWithSecrets(
+                $signature,
                 [
                     'data' => $data,
                     'buildQuery' => true,
-                ],
-                Util::getShopifyConfig('api_secret')
+                ]
             );
-            if (! $signature->isSame($signatureLocal)) {
+            if (! $valid) {
                 // Possible tampering
                 $validator->errors()->add('signature', 'Signature does not match.');
             }

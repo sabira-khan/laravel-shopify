@@ -67,14 +67,15 @@ class AuthProxy
         }
 
         // Build a local signature
-        $signatureLocal = Util::createHmac(
+        $valid = Util::verifyHmacWithSecrets(
+            Hmac::fromNative($signature),
             [
                 'data' => $query,
                 'buildQuery' => true,
             ],
-            Util::getShopifyConfig('api_secret', $shop)
+            $shop
         );
-        if ($shop->isNull() || ! Hmac::fromNative($signature)->isSame($signatureLocal)) {
+        if ($shop->isNull() || ! $valid) {
             // Issue with HMAC or missing shop header
             return Response::make('Invalid proxy signature.', HttpResponse::HTTP_UNAUTHORIZED);
         }

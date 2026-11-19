@@ -423,4 +423,21 @@ class ApiHelperTest extends TestCase
 
         $this->assertFalse($this->api->make()->verifyRequest($params));
     }
+
+    public function testVerifyRequestAcceptsOldSecretDuringRotation(): void
+    {
+        $params = $this->signedParams();
+        $this->app['config']->set('shopify-app.api_secret_old', $this->app['config']->get('shopify-app.api_secret'));
+        $this->app['config']->set('shopify-app.api_secret', 'rotated-secret');
+
+        $this->assertTrue($this->api->make()->verifyRequest($params));
+    }
+
+    public function testVerifyRequestRejectsOldSecretWhenNotConfigured(): void
+    {
+        $params = $this->signedParams();
+        $this->app['config']->set('shopify-app.api_secret', 'rotated-secret');
+
+        $this->assertFalse($this->api->make()->verifyRequest($params));
+    }
 }
